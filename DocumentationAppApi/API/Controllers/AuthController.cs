@@ -2,6 +2,7 @@
 using DocumentationAppApi.Infrastructure.Persistence;
 using DocumentationAppApi.Requests.Auth;
 using DocumentationAppApi.Responses.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,12 +14,14 @@ using System.Text;
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
-    private readonly IConfiguration _config;
+    private readonly ITokenService _tokenService;
 
-    public AuthController(AppDbContext context, IConfiguration config)
+    public AuthController(
+        AppDbContext context,
+        ITokenService tokenService)
     {
         _context = context;
-        _config = config;
+        _tokenService = tokenService;
     }
 
     [HttpPost("login")]
@@ -27,46 +30,29 @@ public class AuthController : ControllerBase
         var user = _context.Users
             .FirstOrDefault(x => x.Username == request.Username);
 
-        if (user == null)
+        if (user == null || user.PasswordHash != request.Password)
             return Unauthorized("Invalid credentials");
 
-        if (user.PasswordHash != request.Password)
-            return Unauthorized("Invalid credentials");
-
-        var token = GenerateToken(user);
+        var token = _tokenService.GenerateToken(user);
 
         return Ok(token);
     }
 
-    private LoginResponse GenerateToken(User user)
+
+    [HttpGet("me")]
+    [Authorize]
+    public IActionResult Me()
     {
-        var jwt = _config.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwt["Key"]!)
-        );
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var role = User.FindFirstValue(ClaimTypes.Role);
 
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        if (userId == null)
+            return Unauthorized();
 
-        var claims = new[]
+        return Ok(new MeResponse
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Role, user.UserTypeId.ToString())
-        };
-
-        var token = new JwtSecurityToken(
-            issuer: jwt["Issuer"],
-            audience: jwt["Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(
-                int.Parse(jwt["ExpireMinutes"]!)
-            ),
-            signingCredentials: creds
-        );
-
-        return new LoginResponse(
-            new JwtSecurityTokenHandler().WriteToken(token),
-            token.ValidTo,
-            user.UserTypeId.ToString()
-        );
+            UserId = int.Parse(userId),
+            Role = role!
+        });
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 
-namespace DocumentationAppApi.Services
+namespace DocumentationAppApi.Infrastructure.Services.FileUploadService
 {
     public interface IFileUploadService
     {

@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace DocumentationAppApi.Services
+namespace DocumentationAppApi.Infrastructure.Services.FileUploadService
 {
     public class FileUploadService : IFileUploadService
     {
