@@ -1,11 +1,20 @@
-﻿namespace DocumentationApp.Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
 
-public class Application : BaseEntity
+namespace DocumentationApp.Domain.Entities;
+
+public class Application
 {
+    public int Id { get; set; }
+
     public string Name { get; set; } = null!;
     public string Description { get; set; } = null!;
+
+    public string Status { get; set; } = "A";
+
+    public DateTime CreatedAt { get; set; }
     public int CreatedBy { get; set; }
+
     // Navigation
-    public ICollection<Documentation> Documentations { get; set; }
-        = new List<Documentation>();
+    public ICollection<Document> Documents { get; set; } = new List<Document>();
 }
