@@ -4,6 +4,7 @@ using DocumentationAppApi.Infrastructure.Services.FileUploadService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace DocumentationAppApi.API.Controllers
@@ -86,5 +87,21 @@ namespace DocumentationAppApi.API.Controllers
             var contentType = "application/pdf"; 
             return PhysicalFile(path, contentType, fileName);
         }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (document == null)
+                return NotFound();
+
+            document.Status = "D";
+            await _context.SaveChangesAsync();
+
+            return Ok("Doküman pasif hale getirildi");
+        }
+
     }
 }
