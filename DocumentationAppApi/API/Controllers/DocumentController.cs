@@ -47,7 +47,6 @@ namespace DocumentationAppApi.API.Controllers
 
             foreach (var file in files)
             {
-                // Dosyayı server'da kaydet
                 var savedFileName = await _fileUploadService.UploadAsync(
                     file,
                     "documents"
@@ -77,17 +76,6 @@ namespace DocumentationAppApi.API.Controllers
             });
         }
 
-        [HttpGet("{fileName}")]
-        public IActionResult GetDocument(string fileName)
-        {
-            var path = Path.Combine(_env.ContentRootPath, "Uploads", "documents", fileName);
-            if (!System.IO.File.Exists(path))
-                return NotFound();
-
-            var contentType = "application/pdf"; 
-            return PhysicalFile(path, contentType, fileName);
-        }
-
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -102,6 +90,5 @@ namespace DocumentationAppApi.API.Controllers
 
             return Ok("Doküman pasif hale getirildi");
         }
-
     }
 }

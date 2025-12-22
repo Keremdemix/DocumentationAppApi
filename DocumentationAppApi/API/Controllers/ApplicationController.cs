@@ -1,9 +1,11 @@
-﻿using DocumentationApp.Domain.Entities;
+﻿using DocumentationApp.Application.Documents.Responses;
+using DocumentationApp.Domain.Entities;
 using DocumentationAppApi.Infrastructure.Persistence;
 using DocumentationAppApi.Requests.Applications;
 using DocumentationAppApi.Responses.Applications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace DocumentationAppApi.API.Controllers;
@@ -79,5 +81,24 @@ public class ApplicationController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpGet("{applicationId}/documents")]
+    public async Task<IActionResult> GetDocumentsByApplication(int applicationId)
+    {
+        var documents = await _context.Documents
+            .Where(d => d.ApplicationId == applicationId && d.Status == "A")
+            .Select(d => new DocumentResponse
+            {
+                Id = d.Id,
+                FileName = d.FileName,
+                FileType = d.FileType,
+                Url = $"{Request.Scheme}://{Request.Host}/{d.FilePath.Replace("\\", "/")}",
+                CreatedAt = d.CreatedAt
+            })
+            .ToListAsync();
+
+        return Ok(documents);
+    }
+
 }
 
