@@ -1,0 +1,10 @@
+﻿# Uploaded files
+Uploads/
+DocumentationAppApi/Uploads/
+
+# ASP.NET Core
+bin/
+obj/
+
+# User-specific
+.vs/

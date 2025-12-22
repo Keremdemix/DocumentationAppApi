@@ -1,6 +1,107 @@
-﻿namespace DocumentationAppApi.API.Controllers
+﻿using DocumentationApp.Domain.Entities;
+using DocumentationAppApi.Infrastructure.Persistence;
+using DocumentationAppApi.Infrastructure.Services.FileUploadService;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+
+namespace DocumentationAppApi.API.Controllers
 {
-    public class DocumentController
+    [ApiController]
+    [Route("api/documents")]
+    [Authorize]
+    public class DocumentController : ControllerBase
     {
+        private readonly AppDbContext _context;
+        private readonly IFileUploadService _fileUploadService;
+        private readonly IWebHostEnvironment _env;
+
+        public DocumentController(
+            IWebHostEnvironment env,
+            AppDbContext context,
+            IFileUploadService fileUploadService)
+        {
+            _context = context;
+            _fileUploadService = fileUploadService;
+            _env = env;
+        }
+
+        [HttpPost("upload")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Upload(
+            [FromForm] int applicationId,
+            [FromForm] List<IFormFile> files)
+        {
+            if (files == null || files.Count == 0)
+                return BadRequest("Dosya seçilmedi");
+
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim);
+
+            var uploadedDocuments = new List<Document>();
+
+            foreach (var file in files)
+            {
+                // Dosyayı server'da kaydet
+                var savedFileName = await _fileUploadService.UploadAsync(
+                    file,
+                    "documents"
+                );
+
+                var document = new Document
+                {
+                    ApplicationId = applicationId,
+                    FileName = file.FileName,
+                    FilePath = $"Uploads/documents/{savedFileName}",
+                    FileType = Path.GetExtension(file.FileName),
+                    Status = "A",
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = userId
+                };
+
+                uploadedDocuments.Add(document);
+            }
+
+            _context.Documents.AddRange(uploadedDocuments);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Message = "Dosyalar başarıyla yüklendi",
+                Count = uploadedDocuments.Count
+            });
+        }
+
+        [HttpGet("{fileName}")]
+        public IActionResult GetDocument(string fileName)
+        {
+            var path = Path.Combine(_env.ContentRootPath, "Uploads", "documents", fileName);
+            if (!System.IO.File.Exists(path))
+                return NotFound();
+
+            var contentType = "application/pdf"; 
+            return PhysicalFile(path, contentType, fileName);
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (document == null)
+                return NotFound();
+
+            document.Status = "D";
+            await _context.SaveChangesAsync();
+
+            return Ok("Doküman pasif hale getirildi");
+        }
+
     }
 }
