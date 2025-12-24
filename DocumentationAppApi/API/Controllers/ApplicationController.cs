@@ -1,6 +1,7 @@
 ﻿using DocumentationApp.Application.Documents.Responses;
 using DocumentationApp.Domain.Entities;
 using DocumentationAppApi.Infrastructure.Persistence;
+using DocumentationAppApi.Infrastructure.Services.FileUploadService;
 using DocumentationAppApi.Requests.Applications;
 using DocumentationAppApi.Responses.Applications;
 using Microsoft.AspNetCore.Authorization;
@@ -16,10 +17,14 @@ namespace DocumentationAppApi.API.Controllers;
 public class ApplicationController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IFileUploadService _fileUploadService;
 
-    public ApplicationController(AppDbContext context)
+    public ApplicationController(
+    AppDbContext context,
+    IFileUploadService fileUploadService)
     {
         _context = context;
+        _fileUploadService = fileUploadService;
     }
 
     [HttpGet]
@@ -30,7 +35,8 @@ public class ApplicationController : ControllerBase
             {
                 Id = x.Id,
                 Name = x.Name,
-                Description = x.Description
+                Description = x.Description,
+                LogoPath = x.LogoPath
             })
             .ToList();
 
@@ -99,6 +105,17 @@ public class ApplicationController : ControllerBase
 
         return Ok(documents);
     }
+    [HttpPost("{applicationId}/logo")]
+    public async Task<IActionResult> UploadLogo(int applicationId, IFormFile logo)
+    {
+        var app = await _context.Applications.FindAsync(applicationId);
+        if (app == null) return NotFound();
 
+        var fileName = await _fileUploadService.UploadAsync(logo, "logos");
+        app.LogoPath = $"Uploads/logos/{fileName}";
+        await _context.SaveChangesAsync();
+
+        return Ok(new { logoPath = app.LogoPath });
+    }
 }
 
