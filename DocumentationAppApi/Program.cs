@@ -108,9 +108,12 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseRouting();
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowFrontend");
+
 
 app.MapControllers();
 
