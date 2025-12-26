@@ -111,6 +111,7 @@ public class ApplicationController : ControllerBase
             .Select(d => new DocumentResponse
             {
                 Id = d.Id,
+                Title=d.Title,
                 FileName = d.FileName,
                 FileType = d.FileType,
                 Url = $"{Request.Scheme}://{Request.Host}/{d.FilePath.Replace("\\", "/")}",

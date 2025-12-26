@@ -81,6 +81,8 @@ namespace DocumentationAppApi.API.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateDocumentRequest request)
         {
+
+            Console.WriteLine($"Update called for Id={id}, Title={request.Title}");
             var doc = await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
             if (doc == null) return NotFound();
 
