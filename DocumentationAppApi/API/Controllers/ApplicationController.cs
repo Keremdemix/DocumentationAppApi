@@ -43,6 +43,21 @@ public class ApplicationController : ControllerBase
         return Ok(apps);
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var app = await _context.Applications.FindAsync(id);
+        if (app == null) return NotFound();
+
+        return Ok(new ApplicationResponse
+        {
+            Id = app.Id,
+            Name = app.Name,
+            Description = app.Description,
+            LogoPath = app.LogoPath
+        });
+    }
+
     [HttpPost]
     public IActionResult Create(CreateApplicationRequest request)
     {
