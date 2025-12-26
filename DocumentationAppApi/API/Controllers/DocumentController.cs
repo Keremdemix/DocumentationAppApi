@@ -1,4 +1,5 @@
 ﻿using DocumentationApp.Domain.Entities;
+using DocumentationAppApi.API.Models.Requests.Document;
 using DocumentationAppApi.Infrastructure.Persistence;
 using DocumentationAppApi.Infrastructure.Services.FileUploadService;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +59,7 @@ namespace DocumentationAppApi.API.Controllers
                     FileName = file.FileName,
                     FilePath = $"Uploads/documents/{savedFileName}",
                     FileType = Path.GetExtension(file.FileName),
+                    Title= Path.GetFileNameWithoutExtension(file.FileName),
                     Status = "A",
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = userId
@@ -75,6 +77,19 @@ namespace DocumentationAppApi.API.Controllers
                 Count = uploadedDocuments.Count
             });
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateDocumentRequest request)
+        {
+            var doc = await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
+            if (doc == null) return NotFound();
+
+            doc.Title = request.Title;
+            await _context.SaveChangesAsync();
+
+            return Ok(doc);
+        }
+
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)

@@ -11,6 +11,7 @@ public class Document
     public string FileName { get; set; } = null!;
     public string FilePath { get; set; } = null!;
     public string FileType { get; set; } = null!; // PDF, VIDEO, WORD
+    public string Title { get; set; } = null!; 
 
     public string Status { get; set; } = "A";
 
