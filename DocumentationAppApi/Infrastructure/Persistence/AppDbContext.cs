@@ -12,7 +12,7 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<UserType> UserTypes => Set<UserType>();
-    public DbSet<Application> Applications => Set<Application>();
+    public DbSet<App> Applications => Set<App>();
     public DbSet<Document> Documents => Set<Document>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -23,7 +23,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<User>()
             .HasQueryFilter(x => x.Status != "D");
 
-        modelBuilder.Entity<Application>()
+        modelBuilder.Entity<App>()
             .HasQueryFilter(x => x.Status != "D");
 
         modelBuilder.Entity<Document>()

@@ -19,5 +19,5 @@ public class Document
     public int CreatedBy { get; set; }
 
     // Navigation
-    public Application Application { get; set; } = null!;
+    public App Application { get; set; } = null!;
 }

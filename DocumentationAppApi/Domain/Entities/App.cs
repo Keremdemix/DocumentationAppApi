@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DocumentationApp.Domain.Entities;
 
-public class Application
+public class App
 {
     public int Id { get; set; }
 
