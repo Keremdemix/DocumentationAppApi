@@ -63,7 +63,7 @@ public class ApplicationController : ControllerBase
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        var app = new Application
+        var app = new App
         {
             Name = request.Name,
             Description = request.Description,

@@ -1,4 +1,6 @@
+using DocumentationAppApi.Application.Documents;
 using DocumentationAppApi.Infrastructure.Persistence;
+using DocumentationAppApi.Infrastructure.Services;
 using DocumentationAppApi.Infrastructure.Services.FileUploadService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +38,7 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
 });
-
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddControllers();

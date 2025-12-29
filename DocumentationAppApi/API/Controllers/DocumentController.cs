@@ -1,5 +1,6 @@
 ﻿using DocumentationApp.Domain.Entities;
 using DocumentationAppApi.API.Models.Requests.Document;
+using DocumentationAppApi.Application.Documents;
 using DocumentationAppApi.Infrastructure.Persistence;
 using DocumentationAppApi.Infrastructure.Services.FileUploadService;
 using Microsoft.AspNetCore.Authorization;
@@ -18,8 +19,10 @@ namespace DocumentationAppApi.API.Controllers
         private readonly AppDbContext _context;
         private readonly IFileUploadService _fileUploadService;
         private readonly IWebHostEnvironment _env;
+        private readonly IDocumentService _documentService;
 
         public DocumentController(
+            IDocumentService documentService,
             IWebHostEnvironment env,
             AppDbContext context,
             IFileUploadService fileUploadService)
@@ -27,6 +30,7 @@ namespace DocumentationAppApi.API.Controllers
             _context = context;
             _fileUploadService = fileUploadService;
             _env = env;
+            _documentService = documentService;
         }
 
         [HttpPost("upload")]
@@ -59,7 +63,7 @@ namespace DocumentationAppApi.API.Controllers
                     FileName = file.FileName,
                     FilePath = $"Uploads/documents/{savedFileName}",
                     FileType = Path.GetExtension(file.FileName),
-                    Title= Path.GetFileNameWithoutExtension(file.FileName),
+                    Title = Path.GetFileNameWithoutExtension(file.FileName),
                     Status = "A",
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = userId
@@ -106,6 +110,19 @@ namespace DocumentationAppApi.API.Controllers
             await _context.SaveChangesAsync();
 
             return Ok("Doküman pasif hale getirildi");
+        }
+
+        [HttpPost("create")]
+        public async Task<IActionResult> Create([FromBody] CreateDocumentRequest request)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            request.CreatedBy = int.Parse(userIdClaim);
+
+            var result = await _documentService.CreateDocumentAsync(request);
+            return Ok(result);
         }
     }
 }
