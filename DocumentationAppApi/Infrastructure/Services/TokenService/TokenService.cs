@@ -43,7 +43,7 @@ public class TokenService : ITokenService
         return new LoginResponse(
             new JwtSecurityTokenHandler().WriteToken(token),
             token.ValidTo,
-            user.UserTypeId.ToString()
+            user.UserType.Name
         );
     }
 }

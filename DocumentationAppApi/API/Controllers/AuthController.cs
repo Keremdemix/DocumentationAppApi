@@ -4,6 +4,7 @@ using DocumentationAppApi.Requests.Auth;
 using DocumentationAppApi.Responses.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -28,7 +29,9 @@ public class AuthController : ControllerBase
     public IActionResult Login(LoginRequest request)
     {
         var user = _context.Users
+            .Include(u => u.UserType)
             .FirstOrDefault(x => x.Username == request.Username);
+
 
         if (user == null || user.PasswordHash != request.Password)
             return Unauthorized("Invalid credentials");
