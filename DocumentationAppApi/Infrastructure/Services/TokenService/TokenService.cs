@@ -23,11 +23,13 @@ public class TokenService : ITokenService
         );
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var roleName = user.UserType?.Name
+               ?? throw new Exception("UserType is not loaded for user " + user.Id);
 
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Role, user.UserTypeId.ToString())
+            new Claim(ClaimTypes.Role, roleName)
         };
 
         var token = new JwtSecurityToken(
@@ -43,7 +45,7 @@ public class TokenService : ITokenService
         return new LoginResponse(
             new JwtSecurityTokenHandler().WriteToken(token),
             token.ValidTo,
-            user.UserType.Name
+            roleName
         );
     }
 }

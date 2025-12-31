@@ -32,7 +32,6 @@ public class AuthController : ControllerBase
             .Include(u => u.UserType)
             .FirstOrDefault(x => x.Username == request.Username);
 
-
         if (user == null || user.PasswordHash != request.Password)
             return Unauthorized("Invalid credentials");
 
