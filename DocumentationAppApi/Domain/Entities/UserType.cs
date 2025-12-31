@@ -1,7 +1,8 @@
 ﻿namespace DocumentationApp.Domain.Entities;
 
-public class UserType : BaseEntity
+public class UserType 
 {
+    public int Id { get; set; }
     public string Name { get; set; } = null!;
 
     // Navigation
