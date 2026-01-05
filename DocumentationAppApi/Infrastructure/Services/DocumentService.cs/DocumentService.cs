@@ -53,7 +53,14 @@ public class DocumentService : IDocumentService
         await page.PdfAsync(new PagePdfOptions
         {
             Path = pdfFilePath,
-            Format = "A4"
+            Format = "A4",
+            Margin = new Microsoft.Playwright.Margin
+            {
+                Top = "20mm",
+                Bottom = "20mm",
+                Left = "15mm",
+                Right = "15mm"
+            }
         });
 
         var relativePath = Path.Combine("Uploads", "documents", pdfFileName).Replace("\\", "/");
