@@ -48,7 +48,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins("http://localhost:5173", "http://localhost:5174")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -105,8 +105,19 @@ app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(builder.Environment.ContentRootPath, "Uploads")),
-    RequestPath = "/uploads"
+    RequestPath = "/Uploads",
+    OnPrepareResponse = ctx =>
+    {
+        // React frontend'in URL'sini ekledik
+        ctx.Context.Response.Headers.Append(
+            "Access-Control-Allow-Origin", "http://localhost:5173"
+        );
+        ctx.Context.Response.Headers.Append(
+            "Access-Control-Allow-Methods", "GET,HEAD,OPTIONS"
+        );
+    }
 });
+
 
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
