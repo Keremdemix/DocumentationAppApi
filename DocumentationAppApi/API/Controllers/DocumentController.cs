@@ -128,6 +128,7 @@ namespace DocumentationAppApi.API.Controllers
             var result = await _documentService.CreateDocumentAsync(request);
             return Ok(result);
         }
+
         [HttpGet("download/{id:int}")]
         public async Task<IActionResult> Download(int id)
         {
@@ -136,10 +137,16 @@ namespace DocumentationAppApi.API.Controllers
 
             var filePath = Path.Combine(_env.ContentRootPath, document.FilePath);
 
-            if (!System.IO.File.Exists(filePath))
+            var uploadsRoot = Path.GetFullPath(Path.Combine(_env.ContentRootPath, "Uploads"));
+            var fullPath = Path.GetFullPath(filePath);
+
+            if (!fullPath.StartsWith(uploadsRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Invalid file path.");
+
+            if (!System.IO.File.Exists(fullPath))
                 return NotFound("File not found on disk.");
 
-            if (document.FileType.ToLower() == ".html")
+            if (string.Equals(document.FileType, ".html", StringComparison.OrdinalIgnoreCase))
             {
                 using var playwright = await Playwright.CreateAsync();
                 await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
@@ -149,8 +156,7 @@ namespace DocumentationAppApi.API.Controllers
 
                 var page = await browser.NewPageAsync();
 
-                // local file olarak yükle — relative img/css bozulmaz
-                var fileUrl = "file:///" + filePath.Replace("\\", "/");
+                var fileUrl = new Uri(fullPath).AbsoluteUri;
                 await page.GotoAsync(fileUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
                 var pdfBytes = await page.PdfAsync(new PagePdfOptions
@@ -169,10 +175,9 @@ namespace DocumentationAppApi.API.Controllers
                 return File(pdfBytes, "application/pdf", document.Title + ".pdf");
             }
 
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
             return File(fileBytes, "application/octet-stream", document.FileName);
         }
-
     }
 }
     
