@@ -1,8 +1,11 @@
-﻿namespace DocumentationApp.Domain.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DocumentationApp.Domain.Entities;
 
 public class UserType 
 {
-    public int Id { get; set; }
+    [Key]
+    public int UserTypeId { get; set; }
     public string Name { get; set; } = null!;
 
     // Navigation

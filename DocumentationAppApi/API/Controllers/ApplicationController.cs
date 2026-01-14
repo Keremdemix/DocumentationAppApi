@@ -33,7 +33,7 @@ public class ApplicationController : ControllerBase
         var apps = _context.Applications
             .Select(x => new ApplicationResponse
             {
-                Id = x.Id,
+                ApplicationId = x.ApplicationId,
                 Name = x.Name,
                 Description = x.Description,
                 LogoPath = x.LogoPath
@@ -51,7 +51,7 @@ public class ApplicationController : ControllerBase
 
         return Ok(new ApplicationResponse
         {
-            Id = app.Id,
+            ApplicationId = app.ApplicationId,
             Name = app.Name,
             Description = app.Description,
             LogoPath = app.LogoPath
@@ -73,13 +73,13 @@ public class ApplicationController : ControllerBase
         _context.Applications.Add(app);
         _context.SaveChanges();
 
-        return Ok(app.Id);
+        return Ok(app.ApplicationId);
     }
 
     [HttpPut("{id}")]
     public IActionResult Update(int id, UpdateApplicationRequest request)
     {
-        var app = _context.Applications.FirstOrDefault(x => x.Id == id);
+        var app = _context.Applications.FirstOrDefault(x => x.ApplicationId == id);
         if (app == null)
             return NotFound();
 
@@ -93,7 +93,7 @@ public class ApplicationController : ControllerBase
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
-        var app = _context.Applications.FirstOrDefault(x => x.Id == id);
+        var app = _context.Applications.FirstOrDefault(x => x.ApplicationId == id);
         if (app == null)
             return NotFound();
 
@@ -110,7 +110,7 @@ public class ApplicationController : ControllerBase
             .Where(d => d.ApplicationId == applicationId && d.Status == "A")
             .Select(d => new DocumentResponse
             {
-                Id = d.Id,
+                DocumentId = d.DocumentId,
                 Title=d.Title,
                 FileName = d.FileName,
                 FileType = d.FileType,

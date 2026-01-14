@@ -88,7 +88,7 @@ namespace DocumentationAppApi.API.Controllers
         {
 
             Console.WriteLine($"Update called for Id={id}, Title={request.Title}");
-            var doc = await _context.Documents.FirstOrDefaultAsync(x => x.Id == id);
+            var doc = await _context.Documents.FirstOrDefaultAsync(x => x.DocumentId == id);
             if (doc == null) return NotFound();
 
             doc.Title = request.Title;
@@ -102,7 +102,7 @@ namespace DocumentationAppApi.API.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var document = await _context.Documents
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.DocumentId == id);
 
             if (document == null)
                 return NotFound();
@@ -131,35 +131,44 @@ namespace DocumentationAppApi.API.Controllers
         [HttpGet("download/{id:int}")]
         public async Task<IActionResult> Download(int id)
         {
-            var document = await _context.Documents.FirstOrDefaultAsync(d => d.Id == id);
+            var document = await _context.Documents.FirstOrDefaultAsync(d => d.DocumentId == id);
             if (document == null) return NotFound();
 
             var filePath = Path.Combine(_env.ContentRootPath, document.FilePath);
 
+            if (!System.IO.File.Exists(filePath))
+                return NotFound("File not found on disk.");
+
             if (document.FileType.ToLower() == ".html")
             {
-                // HTML → PDF dönüştür
                 using var playwright = await Playwright.CreateAsync();
-                await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+                await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+                {
+                    Headless = true
+                });
+
                 var page = await browser.NewPageAsync();
 
-                var htmlContent = await System.IO.File.ReadAllTextAsync(filePath);
-                await page.SetContentAsync(htmlContent);
+                // local file olarak yükle — relative img/css bozulmaz
+                var fileUrl = "file:///" + filePath.Replace("\\", "/");
+                await page.GotoAsync(fileUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-                var pdfStream = new MemoryStream();
                 var pdfBytes = await page.PdfAsync(new PagePdfOptions
                 {
                     Format = "A4",
-                    Margin = new Microsoft.Playwright.Margin { Top = "20mm", Bottom = "20mm", Left = "15mm", Right = "15mm" }
+                    PrintBackground = true,
+                    Margin = new Microsoft.Playwright.Margin
+                    {
+                        Top = "20mm",
+                        Bottom = "20mm",
+                        Left = "15mm",
+                        Right = "15mm"
+                    }
                 });
 
-                await pdfStream.WriteAsync(pdfBytes);
-                pdfStream.Position = 0;
-
-                return File(pdfStream, "application/pdf", document.Title + ".pdf");
+                return File(pdfBytes, "application/pdf", document.Title + ".pdf");
             }
 
-            // HTML değilse direkt indir
             var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
             return File(fileBytes, "application/octet-stream", document.FileName);
         }
