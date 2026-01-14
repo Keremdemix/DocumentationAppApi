@@ -24,11 +24,11 @@ public class TokenService : ITokenService
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var roleName = user.UserType?.Name
-               ?? throw new Exception("UserType is not loaded for user " + user.Id);
+               ?? throw new Exception("UserType is not loaded for user " + user.UserId);
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Role, roleName)
         };
 

@@ -1,10 +1,12 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace DocumentationApp.Domain.Entities;
 
 public class Document
 {
-    public int Id { get; set; }
+    [Key]
+    public int DocumentId { get; set; }
 
     public int ApplicationId { get; set; }
 

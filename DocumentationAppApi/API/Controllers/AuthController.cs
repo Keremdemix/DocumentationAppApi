@@ -32,13 +32,28 @@ public class AuthController : ControllerBase
             .Include(u => u.UserType)
             .FirstOrDefault(x => x.Username == request.Username);
 
-        if (user == null || user.PasswordHash != request.Password)
+        if (user == null)
+            return Unauthorized("Invalid credentials");
+
+        bool passwordValid;
+
+        if (user.IsPasswordCreated)
+        {
+            passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+        }
+        else
+        {
+            passwordValid = request.Password == user.PasswordHash;
+        }
+
+        if (!passwordValid)
             return Unauthorized("Invalid credentials");
 
         var token = _tokenService.GenerateToken(user);
 
         return Ok(token);
     }
+
 
 
     [HttpGet("me")]
