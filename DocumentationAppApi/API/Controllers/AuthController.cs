@@ -88,7 +88,14 @@ public class AuthController : ControllerBase
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ResetTokenRequest request)
     {
-        await _passwordResetService.RequestTokenAsync(request);
+        try
+        {
+            await _passwordResetService.RequestTokenAsync(request);
+        }
+        catch
+        {
+            // Silently ignore to prevent user enumeration
+        }
         return Ok(new { message = "Şifre sıfırlama kodu mail adresinize gönderildi." });
     }
 
