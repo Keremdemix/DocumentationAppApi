@@ -29,7 +29,7 @@ namespace DocumentationAppApi.Infrastructure.Services.EmailService
                 EnableSsl = true
             };
 
-            var mailMessage = new MailMessage
+            using var mailMessage = new MailMessage
             {
                 From = new MailAddress(smtpUser, fromName),
                 Subject = subject,
