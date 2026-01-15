@@ -75,12 +75,16 @@ public class PasswordResetService : IPasswordResetService
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request)
     {
-        var tokenEntry = _db.PasswordResetTokens.FirstOrDefault(t => t.Token == request.Token);
+        var tokenEntry = await _db.PasswordResetTokens
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.Token == request.Token);
+            
         if (tokenEntry == null || tokenEntry.ExpireAt < DateTime.UtcNow)
             throw new Exception("Token geçersiz veya süresi dolmuş.");
 
-        var user = _db.Users.FirstOrDefault(u => u.UserId == tokenEntry.UserId);
-        if (user == null) throw new Exception("Kullanıcı bulunamadı.");
+        var user = tokenEntry.User;
+        if (user == null || !user.Email.Equals(request.Mail, StringComparison.OrdinalIgnoreCase))
+            throw new Exception("Token ile kullanıcı eşleşmiyor.");
 
         if (request.NewPassword != request.NewPasswordControl)
             throw new Exception("Şifreler uyuşmuyor.");
