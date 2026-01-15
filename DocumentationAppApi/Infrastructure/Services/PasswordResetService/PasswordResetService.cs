@@ -3,11 +3,11 @@ using DocumentationAppApi.API.Models.Responses.Auth;
 using DocumentationAppApi.Domain.Entities;
 using DocumentationAppApi.Infrastructure.Persistence;
 using DocumentationAppApi.Infrastructure.Services.EmailService;
-using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 public class PasswordResetService : IPasswordResetService
 {
@@ -22,9 +22,13 @@ public class PasswordResetService : IPasswordResetService
 
     private string GenerateSecureToken()
     {
-        // 6 haneli güvenli token
-        return RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        Span<byte> buffer = stackalloc byte[6];
+        RandomNumberGenerator.Fill(buffer);
+
+        return new string(buffer.ToArray().Select(b => chars[b % chars.Length]).ToArray());
     }
+
 
     public async Task RequestTokenAsync(ResetTokenRequest request)
     {
@@ -79,23 +83,28 @@ public class PasswordResetService : IPasswordResetService
         var tokenEntry = await _db.PasswordResetTokens
             .Include(t => t.User)
             .FirstOrDefaultAsync(t => t.Token == request.Token);
-            
+
         if (tokenEntry == null || tokenEntry.ExpireAt < DateTime.UtcNow)
             throw new Exception("Token geçersiz veya süresi dolmuş.");
 
         var user = tokenEntry.User;
-        if (user == null || !user.Email.Equals(request.Mail, StringComparison.OrdinalIgnoreCase))
+        if (user == null)
+            throw new Exception("Kullanıcı bulunamadı.");
+
+        if (!user.Email.Equals(request.Mail, StringComparison.OrdinalIgnoreCase))
             throw new Exception("Token ile kullanıcı eşleşmiyor.");
 
         if (request.NewPassword != request.NewPasswordControl)
             throw new Exception("Şifreler uyuşmuyor.");
 
-        // Şifreyi hashle ve IsPasswordCreated = true yap
+        //if (request.NewPassword.Length < 8)
+        //   throw new Exception("Şifre en az 8 karakter olmalıdır.");
+        
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         user.IsPasswordCreated = true;
 
-        // Token’ı sil
         _db.PasswordResetTokens.Remove(tokenEntry);
         await _db.SaveChangesAsync();
     }
+
 }

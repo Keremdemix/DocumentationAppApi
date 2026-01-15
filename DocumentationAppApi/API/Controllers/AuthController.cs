@@ -107,21 +107,21 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    // 
+    // Şifre değiştirme
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            return Unauthorized("Invalid user claim");
+
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return NotFound("User not found");
-
         if (request.NewPassword != request.NewPasswordControl)
             return BadRequest("Passwords do not match");
-
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         user.IsPasswordCreated = true;
-
         await _context.SaveChangesAsync();
         return Ok(new { message = "Password changed successfully" });
     }
@@ -133,20 +133,21 @@ public class AuthController : ControllerBase
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
-        var tokenEntry = _context.PasswordResetTokens
-            .FirstOrDefault(t => t.Token == request.Token);
+        try
+        {
+            await _passwordResetService.ResetPasswordAsync(request);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
 
-        if (tokenEntry == null || tokenEntry.ExpireAt < DateTime.UtcNow)
-            return BadRequest("Token geçersiz.");
-
-        var user = _context.Users
-            .Include(u => u.UserType)
-            .FirstOrDefault(u => u.UserId == tokenEntry.UserId);
+        var user = await _context.Users
+                    .Include(u => u.UserType)
+                    .FirstOrDefaultAsync(u => u.Email == request.Mail);
 
         if (user == null)
-            return BadRequest("Kullanıcı bulunamadı.");
-
-        await _passwordResetService.ResetPasswordAsync(request);
+            return BadRequest("User not found after reset");
 
         var jwt = _tokenService.GenerateToken(user);
 
