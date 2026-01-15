@@ -20,11 +20,14 @@ public class DocumentService : IDocumentService
 
     public async Task<Document> CreateDocumentAsync(CreateDocumentRequest request)
     {
-        var safeTitle = string.Join("_", request.Title.Split(Path.GetInvalidFileNameChars()));
+        var safeTitle = string.Join("_", request.Title.Split(Path.GetInvalidFileNameChars())).Trim('_', ' ');
+        if (string.IsNullOrWhiteSpace(safeTitle))
+            safeTitle = "document";
         var folder = Path.Combine(_env.ContentRootPath, "Uploads", "documents");
         Directory.CreateDirectory(folder);
 
-        string fileName = $"{safeTitle}.html";
+
+        string fileName = $"{safeTitle}_{Guid.NewGuid():N}.html";
         string filePath = Path.Combine(folder, fileName);
         string fileType = ".html";
 

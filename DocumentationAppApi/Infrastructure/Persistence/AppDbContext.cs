@@ -1,4 +1,5 @@
 ﻿using DocumentationApp.Domain.Entities;
+using DocumentationAppApi.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DocumentationAppApi.Infrastructure.Persistence;
@@ -14,6 +15,8 @@ public class AppDbContext : DbContext
     public DbSet<UserType> UserTypes => Set<UserType>();
     public DbSet<App> Applications => Set<App>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
