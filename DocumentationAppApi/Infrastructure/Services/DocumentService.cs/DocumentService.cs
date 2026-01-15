@@ -20,7 +20,9 @@ public class DocumentService : IDocumentService
 
     public async Task<Document> CreateDocumentAsync(CreateDocumentRequest request)
     {
-        var safeTitle = string.Join("_", request.Title.Split(Path.GetInvalidFileNameChars())).Trim('_', ' ');
+        var safeTitle = string.IsNullOrWhiteSpace(request.Title)
+            ? "document"
+            : string.Join("_", request.Title.Split(Path.GetInvalidFileNameChars())).Trim('_', ' ');
         if (string.IsNullOrWhiteSpace(safeTitle))
             safeTitle = "document";
         var folder = Path.Combine(_env.ContentRootPath, "Uploads", "documents");
