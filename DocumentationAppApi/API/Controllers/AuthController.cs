@@ -1,4 +1,5 @@
 ﻿using DocumentationApp.Domain.Entities;
+using DocumentationAppApi.API.Models.Requests.Auth;
 using DocumentationAppApi.Infrastructure.Persistence;
 using DocumentationAppApi.Requests.Auth;
 using DocumentationAppApi.Responses.Auth;
@@ -16,13 +17,17 @@ public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ITokenService _tokenService;
+    private readonly IPasswordResetService _passwordResetService;
 
     public AuthController(
         AppDbContext context,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        IPasswordResetService passwordResetService)
     {
+
         _context = context;
         _tokenService = tokenService;
+        _passwordResetService = passwordResetService;
     }
 
     [HttpPost("login")]
@@ -51,7 +56,12 @@ public class AuthController : ControllerBase
 
         var token = _tokenService.GenerateToken(user);
 
-        return Ok(token);
+        return Ok(new
+        {
+            token,
+            userType = user.UserType.Name,
+            isPasswordCreated = user.IsPasswordCreated
+        });
     }
 
 
@@ -72,4 +82,81 @@ public class AuthController : ControllerBase
             Role = role!
         });
     }
+
+
+    /// Şifre sıfırlama maili gönder
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ResetTokenRequest request)
+    {
+        try
+        {
+            await _passwordResetService.RequestTokenAsync(request);
+        }
+        catch
+        {
+            // Silently ignore to prevent user enumeration
+        }
+        return Ok(new { message = "Şifre sıfırlama kodu mail adresinize gönderildi." });
+    }
+
+    /// Token kontrolü
+    [HttpPost("verify-reset-token")]
+    public IActionResult VerifyResetToken([FromBody] VerifyPasswordResetTokenRequest request)
+    {
+        var result = _passwordResetService.VerifyToken(request);
+        return Ok(result);
+    }
+
+    // Şifre değiştirme
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            return Unauthorized("Invalid user claim");
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return NotFound("User not found");
+        if (request.NewPassword != request.NewPasswordControl)
+            return BadRequest("Passwords do not match");
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.IsPasswordCreated = true;
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Password changed successfully" });
+    }
+
+    public record ChangePasswordRequest(string NewPassword, string NewPasswordControl);
+
+
+    /// Şifre sıfırlama
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        try
+        {
+            await _passwordResetService.ResetPasswordAsync(request);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+
+        var user = await _context.Users
+                    .Include(u => u.UserType)
+                    .FirstOrDefaultAsync(u => u.Email == request.Mail);
+
+        if (user == null)
+            return BadRequest("User not found after reset");
+
+        var jwt = _tokenService.GenerateToken(user);
+
+        return Ok(new
+        {
+            token = jwt.Token,
+            tokenExpire = jwt.Expiration,
+            userType = jwt.UserType
+        });
+    }
 }
+
