@@ -16,11 +16,22 @@ namespace DocumentationAppApi.Infrastructure.Services.EmailService
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
+        public async Task SendEmailAsync(string toEmail, string subject, string body)
+        {
             var smtpHost = _config.GetValue<string>("Smtp:Host");
             var smtpUser = _config.GetValue<string>("Smtp:User");
             var smtpPassword = _config.GetValue<string>("Smtp:Password");
             var fromName = _config.GetValue<string>("Smtp:FromName");
             var port = _config.GetValue<int>("Smtp:Port");
+
+            if (string.IsNullOrWhiteSpace(smtpHost))
+                throw new InvalidOperationException("SMTP host is not configured (Smtp:Host).");
+            if (string.IsNullOrWhiteSpace(smtpUser))
+                throw new InvalidOperationException("SMTP user is not configured (Smtp:User).");
+            if (port <= 0)
+                throw new InvalidOperationException("SMTP port is not configured or invalid (Smtp:Port).");
+
+            using var smtpClient = new SmtpClient(smtpHost)
 
             using var smtpClient = new SmtpClient(smtpHost)
             {
