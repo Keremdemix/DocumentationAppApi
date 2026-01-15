@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -9,11 +9,21 @@ namespace DocumentationAppApi.Infrastructure.Services.EmailService
     {
         private readonly IConfiguration _config;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="EmailService"/> with the provided configuration used to read SMTP settings.
+        /// </summary>
+        /// <param name="config">Application configuration containing SMTP settings: Smtp:Host, Smtp:User, Smtp:Password, Smtp:FromName, and Smtp:Port.</param>
         public EmailService(IConfiguration config)
         {
             _config = config;
         }
 
+        /// <summary>
+        /// Sends an email message to the specified recipient using SMTP settings read from configuration.
+        /// </summary>
+        /// <param name="toEmail">Recipient email address.</param>
+        /// <param name="subject">Email subject line.</param>
+        /// <param name="body">Email body text.</param>
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
             var smtpHost = _config.GetValue<string>("Smtp:Host");

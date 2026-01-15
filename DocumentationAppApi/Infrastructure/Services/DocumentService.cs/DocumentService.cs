@@ -1,4 +1,4 @@
-﻿using DocumentationApp.Domain.Entities;
+using DocumentationApp.Domain.Entities;
 using DocumentationAppApi.API.Models.Requests.Document;
 using DocumentationAppApi.Application.Documents;
 using DocumentationAppApi.Infrastructure.Persistence;
@@ -18,6 +18,11 @@ public class DocumentService : IDocumentService
         _env = env;
     }
 
+    /// <summary>
+    /// Creates an HTML file from the supplied request content, saves it under Uploads/documents, and persists a Document record to the database.
+    /// </summary>
+    /// <param name="request">Request containing Title, Content, ApplicationId, and CreatedBy used to name the file, populate the document record, and set ownership.</param>
+    /// <returns>The persisted Document entity with FileName, FilePath, FileType, Status, CreatedAt, and CreatedBy populated.</returns>
     public async Task<Document> CreateDocumentAsync(CreateDocumentRequest request)
     {
         var safeTitle = string.Join("_", request.Title.Split(Path.GetInvalidFileNameChars())).Trim('_', ' ');
