@@ -73,8 +73,9 @@ public class ApplicationController : ControllerBase
         _context.Applications.Add(app);
         _context.SaveChanges();
 
-        return Ok(app.ApplicationId);
+        return Ok(app); 
     }
+
 
     [HttpPut("{id}")]
     public IActionResult Update(int id, UpdateApplicationRequest request)
