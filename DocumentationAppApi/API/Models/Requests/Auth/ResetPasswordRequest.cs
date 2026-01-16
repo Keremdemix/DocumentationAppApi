@@ -12,7 +12,6 @@ namespace DocumentationAppApi.API.Models.Requests.Auth
         public string Token { get; set; }
 
         [Required]
-        [MinLength(8)]
         public string NewPassword { get; set; }
 
         [Required]
