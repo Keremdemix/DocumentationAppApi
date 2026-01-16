@@ -65,7 +65,6 @@ public class AuthController : ControllerBase
     }
 
 
-
     [HttpGet("me")]
     [Authorize]
     public IActionResult Me()
@@ -83,20 +82,23 @@ public class AuthController : ControllerBase
         });
     }
 
-
     /// Şifre sıfırlama maili gönder
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ResetTokenRequest request)
     {
-        try
+        if (!ModelState.IsValid)
+            return Ok(new { success = false, message = "Invalid email" });
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Mail);
+
+        if (user == null)
         {
-            await _passwordResetService.RequestTokenAsync(request);
+            return Ok(new { success = false, message = "No user was found for this email address." });
         }
-        catch
-        {
-            // Silently ignore to prevent user enumeration
-        }
-        return Ok(new { message = "Şifre sıfırlama kodu mail adresinize gönderildi." });
+
+        await _passwordResetService.RequestTokenAsync(request);
+
+        return Ok(new { success = true });
     }
 
     /// Token kontrolü
@@ -104,6 +106,9 @@ public class AuthController : ControllerBase
     public IActionResult VerifyResetToken([FromBody] VerifyPasswordResetTokenRequest request)
     {
         var result = _passwordResetService.VerifyToken(request);
+        if (!result.IsValid)
+            return BadRequest(result);
+
         return Ok(result);
     }
 
@@ -125,7 +130,6 @@ public class AuthController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { message = "Password changed successfully" });
     }
-
     public record ChangePasswordRequest(string NewPassword, string NewPasswordControl);
 
 
